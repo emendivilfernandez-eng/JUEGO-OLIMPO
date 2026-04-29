@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión Olimpo: Cultura Clásica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Special Elite', 'Courier New', Courier, monospace;
+            background-color: #000;
+        }
+        .bg-olympus {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('https://images.unsplash.com/photo-1505461296292-7d67beed10a2?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+        }
+        .secret-file {
+            background-color: #f2e6c9;
+            border-left: 20px solid #5d2e0a;
+            box-shadow: 0 0 60px rgba(0,0,0,1);
+            color: #1a1a1a;
+        }
+        .stamp-red {
+            border: 6px double #b91c1c;
+            color: #b91c1c;
+            padding: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            transform: rotate(-10deg);
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <audio id="bgMusic" loop>
+        <source src="SONIDO INTERESTELAR.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="winSound"><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>
+    <audio id="failSound"><source src="https://assets.mixkit.co/active_storage/sfx/253/253-preview.mp3" type="audio/mpeg"></audio>
+
+    <div id="game-container" class="w-full max-w-4xl bg-olympus min-h-[620px] rounded-3xl flex items-center justify-center p-6 border-4 border-yellow-900/50 relative overflow-hidden">
+        
+        <div id="view-start" class="z-20 text-center bg-black/80 p-10 rounded-2xl border-2 border-yellow-600 block">
+            <h1 class="text-5xl text-yellow-500 mb-4 font-bold uppercase">Misión Olimpo</h1>
+            <p class="text-white mb-10 text-lg">Selecciona tu avatar para iniciar el expediente:</p>
+            
+            <div class="flex gap-16 justify-center">
+                <button onclick="initGame('Andrómeda', 'Victoria')" class="group flex flex-col items-center transition hover:scale-110">
+                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Victoria" class="w-28 h-28 bg-white rounded-full border-4 border-pink-500 shadow-xl">
+                    <span class="text-pink-400 mt-4 font-bold text-xl uppercase tracking-widest">Andrómeda</span>
+                </button>
+                <button onclick="initGame('Perseo', 'Christian')" class="group flex flex-col items-center transition hover:scale-110">
+                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Christian" class="w-28 h-28 bg-white rounded-full border-4 border-blue-500 shadow-xl">
+                    <span class="text-blue-400 mt-4 font-bold text-xl uppercase tracking-widest">Perseo</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="view-question" class="hidden z-20 w-full max-w-2xl secret-file p-10">
+            <div id="top-bar" class="flex justify-between items-center mb-8 border-b-2 border-gray-400 pb-4"></div>
+            <div class="mb-6">
+                <p class="text-xs font-black text-gray-500 uppercase mb-2">Sección: Panteón Grecorromano</p>
+                <h2 id="q-content" class="text-2xl font-bold leading-tight min-h-[3em]"></h2>
+            </div>
+            <div id="options-box" class="grid gap-3"></div>
+        </div>
+
+        <div id="view-feedback" class="hidden z-20 w-full max-w-xl bg-[#f2e6c9] border-8 border-red-800 p-10 shadow-2xl text-center">
+            <div class="stamp-red mb-6">Error Crítico</div>
+            <h3 class="text-2xl font-black text-red-700 mb-4 uppercase">Dato Incorrecto</h3>
+            <div class="bg-white/60 p-6 rounded-lg mb-8 border border-red-300">
+                <p id="f-message" class="text-lg font-bold text-gray-800 italic"></p>
+            </div>
+            <button onclick="backToRetry()" class="bg-red-700 text-white px-10 py-4 font-black hover:bg-red-900 transition uppercase shadow-lg">
+                Reintentar Situación
+            </button>
+        </div>
+
+        <div id="view-final" class="hidden z-20 w-full max-w-xl bg-white p-12 rounded shadow-2xl text-center">
+            <h2 id="final-title" class="text-5xl font-black mb-6"></h2>
+            <div id="final-res" class="text-6xl font-black mb-10 border-8 border-black inline-block p-6 bg-yellow-400"></div>
+            <p id="final-desc" class="text-xl mb-8 font-bold"></p>
+            <button onclick="location.reload()" class="bg-black text-white px-10 py-4 font-bold hover:bg-yellow-600 transition uppercase">Reiniciar Aplicación</button>
+        </div>
+
+    </div>
+
+    <script>
+        const database = [
+            { q: "¿Quién es el equivalente romano de Zeus?", a: ["Júpiter", "Marte", "Saturno", "Neptuno"], c: 0, f: "Zeus (griego) y Júpiter (romano) son los reyes del Olimpo y señores del rayo." },
+            { q: "Atenea es la diosa de la sabiduría. ¿En Roma es...?", a: ["Diana", "Minerva", "Venus", "Vesta"], c: 1, f: "Minerva heredó las funciones de sabiduría y estrategia militar de Atenea." },
+            { q: "¿Qué atributo identifica a Poseidón/Neptuno?", a: ["El Rayo", "El Tridente", "El Casco", "La Lira"], c: 1, f: "El tridente le permite a Neptuno agitar las aguas y provocar terremotos." },
+            { q: "Hermes es el mensajero. ¿Cuál es su nombre romano?", a: ["Mercurio", "Vulcano", "Baco", "Plutón"], c: 0, f: "Mercurio lleva sandalias aladas para cumplir sus misiones rápidamente." },
+            { q: "Ares es el dios griego de la guerra. En Roma es:", a: ["Jano", "Marte", "Quirino", "Saturno"], c: 1, f: "Marte es el gran dios de la guerra y protector del ejército romano." },
+            { q: "¿Qué diosa romana equivale a Afrodita?", a: ["Juno", "Venus", "Ceres", "Diana"], c: 1, f: "Venus es la diosa del amor, la belleza y la fertilidad." },
+            { q: "Hera es la esposa de Zeus. En Roma se llama:", a: ["Juno", "Vesta", "Minerva", "Diana"], c: 0, f: "Juno es la reina de los dioses y protectora de la familia." },
+            { q: "Artemisa es la cazadora. Su nombre romano es:", a: ["Diana", "Venus", "Proserpina", "Minerva"], c: 0, f: "Diana es la diosa de los bosques, la caza y la luna." },
+            { q: "¿Quién es el señor del Inframundo (Hades) en Roma?", a: ["Plutón", "Baco", "Saturno", "Neptuno"], c: 0, f: "Plutón custodia el reino de las sombras y las riquezas de la tierra." },
+            { q: "¿Cuál es el poder de Hefesto/Vulcano?", a: ["El rayo", "La forja y el fuego", "La medicina", "La música"], c: 1, f: "Vulcano es el herrero divino que forja las armas de los dioses." },
+            { q: "Dioniso es el dios del vino. En Roma es:", a: ["Febo", "Baco", "Silvano", "Cupido"], c: 1, f: "Baco representa la vendimia, el vino y el éxtasis." },
+            { q: "Deméter es la diosa de la agricultura. En Roma es:", a: ["Ceres", "Vesta", "Flora", "Pomona"], c: 0, f: "Ceres bendice las cosechas (de ahí viene la palabra 'cereal')." },
+            { q: "Hestia es la diosa del hogar. En Roma es:", a: ["Juno", "Vesta", "Diana", "Ceres"], c: 1, f: "Vesta protegía el fuego sagrado de la ciudad de Roma." },
+            { q: "¿Qué animal es sagrado para Atenea/Minerva?", a: ["El Águila", "La Lechuza", "El Pavo Real", "El Lobo"], c: 1, f: "La lechuza simboliza la sabiduría y la vigilancia nocturna." },
+            { q: "¿Cuál es el arma de Zeus/Júpiter?", a: ["El Rayo", "El Tridente", "El Arco", "La Lanza"], c: 0, f: "El rayo es el símbolo del poder soberano de Júpiter." },
+            { q: "Apolo es el dios de las artes. En Roma se le llama:", a: ["Febo", "Baco", "Marte", "Vulcano"], c: 0, f: "Febo significa el resplandeciente o luminoso." },
+            { q: "Cronos, el titán del tiempo, es en Roma:", a: ["Urano", "Saturno", "Jano", "Plutón"], c: 1, f: "Saturno es el antiguo titán que reinó antes que Júpiter." },
+            { q: "Eros es el dios del deseo. En Roma es:", a: ["Cupido", "Baco", "Fauno", "Marte"], c: 0, f: "Cupido es el niño arquero que lanza flechas de amor." },
+            { q: "El dios romano de los comienzos (de dos caras) es:", a: ["Marte", "Jano", "Saturno", "Baco"], c: 1, f: "Jano tiene dos caras: una mira al pasado y otra al futuro." },
+            { q: "Pan, dios de los pastores, en Roma es:", a: ["Fauno", "Silvano", "Baco", "Vulcano"], c: 0, f: "Los faunos son divinidades de la naturaleza con patas de cabra." },
+            { q: "¿Quién lleva el escudo Égida con Medusa?", a: ["Atenea", "Afrodita", "Hera", "Diana"], c: 0, f: "Atenea/Minerva usa la égida para proteger a los héroes." },
+            { q: "La diosa de la victoria en Grecia es:", a: ["Niké", "Eris", "Iris", "Némesis"], c: 0, f: "Niké es representada como una mujer alada (Victoria)." },
+            { q: "¿Quién es el barquero de los muertos?", a: ["Hades", "Caronte", "Tanatos", "Hermes"], c: 1, f: "Caronte exige una moneda para cruzar el río Estigia." },
+            { q: "¿Qué poder tiene Poseidón?", a: ["Terremotos", "Volar", "Invisibilidad", "Curar"], c: 0, f: "Poseidón es el sacudidor de la tierra y amo del mar." },
+            { q: "¿Quién es el padre de Rómulo y Remo?", a: ["Júpiter", "Marte", "Apolo", "Saturno"], c: 1, f: "Marte es el ancestro divino del pueblo romano." },
+            { q: "¿Qué diosa nació de la espuma del mar?", a: ["Afrodita", "Hera", "Atenea", "Artemisa"], c: 0, f: "Afrodita (Venus) representa la belleza ideal." },
+            { q: "Vulcano trabaja bajo el volcán...", a: ["Vesubio", "Etna", "Olimpo", "Teide"], c: 1, f: "El Etna en Sicilia es considerado la fragua de Vulcano." },
+            { q: "Diosa griega de la agricultura:", a: ["Hestia", "Deméter", "Hera", "Atenea"], c: 1, f: "Deméter es Ceres para los romanos." },
+            { q: "¿Qué atributo tiene Apolo?", a: ["La Lira", "El Tridente", "El Casco", "El Caduceo"], c: 0, f: "La lira simboliza el don de la música y la armonía." },
+            { q: "Nombre griego de Plutón:", a: ["Hades", "Poseidón", "Zeus", "Ares"], c: 0, f: "Hades gobierna las regiones subterráneas." },
+            { q: "El fuego sagrado de Roma era de:", a: ["Juno", "Vesta", "Diana", "Minerva"], c: 1, f: "Vesta protegía la continuidad de la ciudad de Roma." },
+            { q: "¿Quién es la madre de Proserpina?", a: ["Ceres", "Vesta", "Juno", "Venus"], c: 0, f: "Ceres buscó a su hija por todo el mundo." },
+            { q: "Vara con serpientes de Mercurio:", a: ["Caduceo", "Tridente", "Égida", "Tirso"], c: 0, f: "El caduceo es el símbolo de la paz y el comercio." },
+            { q: "Nombre griego de Marte:", a: ["Ares", "Hefesto", "Dioniso", "Hermes"], c: 0, f: "Ares es el impetuoso dios de la guerra." },
+            { q: "Nombre griego de Júpiter:", a: ["Zeus", "Cronos", "Urano", "Hades"], c: 0, f: "Zeus es el portador del rayo y padre de los dioses." },
+            { q: "Atributo de Juno/Hera:", a: ["Pavo Real", "Lechuza", "Ciervo", "Lobo"], c: 0, f: "El pavo real con sus 'ojos' representa la vigilancia de la reina." }
+        ];
+
+        let selectedQuestions = [];
+        let currentIdx = 0;
+        let score = 0;
+
+        function initGame(hero, seed) {
+            document.getElementById('view-start').classList.add('hidden');
+            document.getElementById('view-question').classList.remove('hidden');
+            document.getElementById('bgMusic').play().catch(()=>{});
+
+            const avatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+            
+            document.getElementById('top-bar').innerHTML = `
+                <div class="flex items-center gap-4">
+                    <img src="${avatarUrl}" class="w-16 h-16 bg-white rounded-full border-2 border-black">
+                    <span class="font-black text-xl uppercase">${hero}</span>
+                </div>
+                <div class="text-right">
+                    <p id="score-counter" class="text-2xl font-black">Aciertos: 0/12</p>
+                </div>
+            `;
+
+            selectedQuestions = database.sort(() => Math.random() - 0.5).slice(0, 12);
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const data = selectedQuestions[currentIdx];
+            document.getElementById('q-content').innerText = data.q;
+            document.getElementById('score-counter').innerText = `Aciertos: ${score}/12`;
+            
+            const box = document.getElementById('options-box');
+            box.innerHTML = '';
+
+            data.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "text-left p-4 border-2 border-black hover:bg-black hover:text-white transition font-bold bg-white/50 shadow-sm";
+                btn.innerText = (i+1) + ". " + opt;
+                btn.onclick = () => check(i);
+                box.appendChild(btn);
+            });
+        }
+
+        function check(choice) {
+            const data = selectedQuestions[currentIdx];
+            if (choice === data.c) {
+                score++;
+                document.getElementById('winSound').play().catch(()=>{});
+                currentIdx++;
+                if (currentIdx < 12) renderQuestion();
+                else showFinal();
+            } else {
+                document.getElementById('failSound').play().catch(()=>{});
+                // MOSTRAR PANTALLA FEEDBACK
+                document.getElementById('view-question').classList.add('hidden');
+                document.getElementById('view-feedback').classList.remove('hidden');
+                document.getElementById('f-message').innerText = "Retroalimentación: " + data.f;
+            }
+        }
+
+        function backToRetry() {
+            // REGRESAR AL EXPEDIENTE PARA OTRA OPORTUNIDAD
+            document.getElementById('view-feedback').classList.add('hidden');
+            document.getElementById('view-question').classList.remove('hidden');
+            renderQuestion(); 
+        }
+
+        function showFinal() {
+            document.getElementById('view-question').classList.add('hidden');
+            document.getElementById('view-final').classList.remove('hidden');
+            
+            const isWin = score >= 12;
+            const title = document.getElementById('final-title');
+            title.innerText = isWin ? "¡MISIÓN CUMPLIDA!" : "OLIMPO PERDIDO";
+            title.style.color = isWin ? "#059669" : "#b91c1c";
+            
+            document.getElementById('final-desc').innerText = isWin ? 
+                "Has demostrado ser un experto en mitología. El Olimpo está a salvo." : 
+                "Tu conocimiento no ha sido suficiente para proteger el panteón.";
+            
+            document.getElementById('final-res').innerText = score + " / 12";
+        }
+    </script>
+</body>
+</html>
